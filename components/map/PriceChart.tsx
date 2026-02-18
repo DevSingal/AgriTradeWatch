@@ -2,8 +2,9 @@ import React from "react";
 import { View, Text, ScrollView, Dimensions } from "react-native";
 import Svg, { Circle, Line, Text as SvgText, G } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
-import { CROP_OPTIONS, MAP_CONFIG } from "@/constants/mapConfig";
+import { MAP_CONFIG } from "@/constants/mapConfig";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useCommodities } from "@/hooks/useCommodities";
 
 interface PriceChartProps {
   chartData: { value: number; label: string; count: number; allPrices?: number[] }[];
@@ -23,6 +24,7 @@ const PriceChart = ({
   isConsumerChart = false,
 }: PriceChartProps) => {
   const { t } = useTranslation();
+  const { commodities } = useCommodities();
 
   // Validate and sanitize chart data
   const validChartData = React.useMemo(() => {
@@ -55,7 +57,7 @@ const PriceChart = ({
 
   if (!validChartData.length) return null;
 
-  const selectedCropData = CROP_OPTIONS.find((c) => c.value === selectedCrop);
+  const selectedCropData = commodities.find((c) => c.value === selectedCrop);
 
   // Collect ALL prices across all dates for min/max calculation
   const allPricesFlat = validChartData.flatMap((d) => d.allPrices || [d.value]);
@@ -83,13 +85,19 @@ const PriceChart = ({
     return padding.top + plotHeight - ((value - yMin) / (yMax - yMin)) * plotHeight;
   };
 
-  // Y-axis labels
+  // Y-axis labels - filter out duplicates caused by rounding
   const numYLabels = 5;
-  const yAxisLabels = [];
+  const yAxisLabelsRaw = [];
   for (let i = 0; i <= numYLabels; i++) {
     const value = yMin + (yMax - yMin) * (i / numYLabels);
-    yAxisLabels.push({ value: Math.round(value), y: yScale(value) });
+    yAxisLabelsRaw.push({ value: Math.round(value), y: yScale(value) });
   }
+  const seenValues = new Set<number>();
+  const yAxisLabels = yAxisLabelsRaw.filter(label => {
+    if (seenValues.has(label.value)) return false;
+    seenValues.add(label.value);
+    return true;
+  });
 
 
 
@@ -244,34 +252,40 @@ const PriceChart = ({
                 const prices = item.allPrices || [item.value];
                 const x = xScale(dateIndex);
                 const gradientColor = getGradientColors()[0];
+                const count = prices.length;
 
-                return prices.map((price, priceIndex) => {
-                  const y = yScale(price);
-                  return (
-                    <G key={`point-${dateIndex}-${priceIndex}`}>
-                      {/* Price label */}
+                return (
+                  <G key={`date-group-${dateIndex}`}>
+                    {/* Count label - shown once per x-axis position */}
+                    {count > 0 && (
                       <SvgText
                         x={x}
-                        y={y - 12}
-                        fontSize={9}
+                        y={padding.top - 10}
+                        fontSize={10}
                         fill={gradientColor}
                         fontWeight="600"
                         textAnchor="middle"
                       >
-                        {price}
+                        n={count}
                       </SvgText>
-                      {/* Dot */}
-                      <Circle
-                        cx={x}
-                        cy={y}
-                        r={6}
-                        fill={gradientColor}
-                        stroke="#fff"
-                        strokeWidth={2}
-                      />
-                    </G>
-                  );
-                });
+                    )}
+                    {/* Dots for each price */}
+                    {prices.map((price, priceIndex) => {
+                      const y = yScale(price);
+                      return (
+                        <Circle
+                          key={`point-${dateIndex}-${priceIndex}`}
+                          cx={x}
+                          cy={y}
+                          r={6}
+                          fill={gradientColor}
+                          stroke="#fff"
+                          strokeWidth={2}
+                        />
+                      );
+                    })}
+                  </G>
+                );
               })}
             </Svg>
           </View>

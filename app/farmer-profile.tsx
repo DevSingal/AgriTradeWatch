@@ -6,11 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLanguage } from "@/context/language-provider";
 
 import profileService, { FarmerProfileData, DTEntry } from "@/services/profile-service";
@@ -236,6 +238,23 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: "center",
   },
+  descriptionContainer: {
+    backgroundColor: "#f8f9fa",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  descriptionLabel: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 4,
+    fontWeight: "600",
+  },
+  descriptionText: {
+    fontSize: 14,
+    color: "#333",
+    lineHeight: 20,
+  },
 });
 
 const FarmerProfile: React.FC = () => {
@@ -248,10 +267,17 @@ const FarmerProfile: React.FC = () => {
   const [entries, setEntries] = useState<DTEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
   useEffect(() => {
+    checkLoginStatus();
     fetchFarmerData();
   }, [username]);
+
+  const checkLoginStatus = async () => {
+    const token = await AsyncStorage.getItem("auth_token");
+    setIsLoggedIn(!!token);
+  };
 
   const fetchFarmerData = async () => {
     setLoading(true);
@@ -263,6 +289,16 @@ const FarmerProfile: React.FC = () => {
         profileService.getFarmerProfile(username),
         profileService.getFarmerEntries(username),
       ]);
+
+      console.log("=== DEBUG: Fetched Farmer Data ===");
+      console.log("Username:", username);
+      console.log("Profile Data:", JSON.stringify(profileData, null, 2));
+      console.log("Entries Data:", JSON.stringify(entriesData, null, 2));
+      console.log("Number of entries:", entriesData?.length);
+      entriesData?.forEach((entry, index) => {
+        console.log(`Entry ${index + 1} - Crop: ${entry.sale_commodity}, Variety: ${entry.variety_name}, Quantity: ${entry.quantity_for_sale} ${entry.unit}`);
+      });
+      console.log("=== END DEBUG ===");
 
       setProfile(profileData);
       setEntries(entriesData);
@@ -356,15 +392,23 @@ const FarmerProfile: React.FC = () => {
               />
               <Text style={styles.detailText}>{profile.email}</Text>
             </View>
-            <View style={styles.detailRow}>
-              <Ionicons
-                name="call-outline"
-                size={20}
-                color="#9C27B0"
-                style={styles.detailIcon}
-              />
-              <Text style={styles.detailText}>{profile.mobile}</Text>
-            </View>
+            {isLoggedIn && (
+              <TouchableOpacity
+                style={styles.detailRow}
+                onPress={() => {
+                  const phoneNumber = profile.mobile.replace(/[^0-9]/g, "");
+                  Linking.openURL(`https://wa.me/${phoneNumber}`);
+                }}
+              >
+                <Ionicons
+                  name="logo-whatsapp"
+                  size={20}
+                  color="#25D366"
+                  style={styles.detailIcon}
+                />
+                <Text style={styles.detailText}>{profile.mobile}</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -408,19 +452,23 @@ const FarmerProfile: React.FC = () => {
                     </Text>
                   </View>
                   <View style={styles.entryDetailRow}>
-                    <Text style={styles.entryDetailLabel}>
-                      {t.farmerProfile.levelOfProduce}
-                    </Text>
-                    <Text style={styles.entryDetailValue}>
-                      {entry.level_of_produce?.replace(/_/g, " ") || "N/A"}
-                    </Text>
-                  </View>
-                  <View style={styles.entryDetailRow}>
                     <Text style={styles.entryDetailLabel}>{t.farmerProfile.listed}</Text>
                     <Text style={styles.entryDetailValue}>
                       {formatDate(entry.created_at)}
                     </Text>
                   </View>
+
+                  {/* Description */}
+                  {entry.description && (
+                    <View style={styles.descriptionContainer}>
+                      <Text style={styles.descriptionLabel}>
+                        {t.farmerProfile.description || "Description"}
+                      </Text>
+                      <Text style={styles.descriptionText}>
+                        {entry.description}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
             ))

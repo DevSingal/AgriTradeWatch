@@ -10,6 +10,7 @@ interface AddCropPayload {
   longitude: number;
   date?: string;
   variety?: string;
+  unit?: string;
   userRole: "farmer" | "consumer";
 }
 
@@ -53,6 +54,11 @@ export const addCrop = async (
       payload.quantitybought = cropData.quantity;
     }
 
+    // Add unit if provided
+    if (cropData.unit) {
+      payload.unit = cropData.unit;
+    }
+
     if (cropData.date) {
       payload.date = cropData.date;
     }
@@ -78,6 +84,7 @@ export const addCrop = async (
     const response = await axios.post(API_URL, payload, config);
 
     console.log("Crop added successfully. Response:", JSON.stringify(response.data, null, 2));
+
     return response.data as CropApiResponse;
   } catch (error: any) {
     console.error("Crop submission error:", error);
