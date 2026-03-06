@@ -1,29 +1,31 @@
 {
   "expo": {
-    "name": "Agritradewatch",
+    "name": "MandiGo",
     "slug": "Agritradewatch",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/images/logo.png",
+    "version": "1.20.0",
+    "orientation": "default",
+    "icon": "./assets/images/logo2.png",
     "scheme": "myapp",
     "newArchEnabled": true,
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/logo.png",
+      "image": "./assets/images/logo2.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.devsingal.Agritradewatch",
-      "googleServicesFile": "./GoogleService-Info.plist",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo.png",
+        "foregroundImage": "./assets/images/logo3.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ],
@@ -40,12 +42,11 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Agritradewatch to access your camera",
-          "microphonePermission": "Allow Agritradewatch to access your microphone",
+          "cameraPermission": "Allow MandiGo to access your camera",
+          "microphonePermission": "Allow MandiGo to access your microphone",
           "recordAudioAndroid": true
         }
       ],
-      "expo-font",
       [
         "expo-build-properties",
         {
@@ -54,8 +55,7 @@
           }
         }
       ],
-      "@react-native-firebase/app",
-      "@react-native-firebase/auth"
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
@@ -65,8 +65,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "cc3ccf18-febc-4c6a-a332-eb6a9fd0c612"
+        "projectId": "f822d86a-65b7-45f8-8832-c40df5c609c8"
       }
-    }
+    },
+    "owner": "monikashah"
   }
 }
