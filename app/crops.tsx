@@ -130,7 +130,14 @@ const CropsScreen = () => {
   }, [userRole]);
 
   // Determine default reporting role based on user's job
-  const defaultReportingAs = String(userRole).toLowerCase() === 'farmer' ? 'seller' : 'buyer';
+  // const defaultReportingAs = String(userRole).toLowerCase() === 'farmer' ? 'seller' : 'buyer';
+  const role = String(userRole).toLowerCase();
+
+  let defaultReportingAs: "buyer" | "seller" = "buyer";
+
+  if (role === "farmer") defaultReportingAs = "seller";
+  if (role === "consumer") defaultReportingAs = "buyer";
+  if (role === "retailer") defaultReportingAs = "seller"; // retailer sells
 
   const [form, setForm] = useState<CropFormState>({
     name: "",
@@ -141,10 +148,20 @@ const CropsScreen = () => {
   });
 
   // Update reportingAs when userRole changes (e.g., on login)
-  useEffect(() => {
-    const newDefault = String(userRole).toLowerCase() === 'farmer' ? 'seller' : 'buyer';
-    setForm(f => ({ ...f, reportingAs: newDefault as "buyer" | "seller" }));
+  // Update reportingAs when userRole changes
+useEffect(() => {
+  const role = String(userRole).toLowerCase();
+
+  let newDefault: "buyer" | "seller" = "buyer";
+
+  if (role === "farmer") newDefault = "seller";
+  if (role === "consumer") newDefault = "buyer";
+  if (role === "retailer") newDefault = "seller";
+
+  setForm((f) => ({ ...f, reportingAs: newDefault }));
   }, [userRole]);
+
+  
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [photo, setPhoto] = useState<PhotoState | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -246,11 +263,11 @@ const CropsScreen = () => {
       return;
     }
 
-    // Only allow farmer and consumer user types to add crops
-    if (userRole !== 'farmer' && userRole !== 'consumer') {
+    // allow farmer, retailer and consumer user types to add crops
+    if (userRole !== 'farmer' && userRole !== 'consumer' && userRole !== 'retailer') {
       Alert.alert(
         t.common.error || "Error",
-        t.crops.onlyFarmerConsumerCanAdd || "Only farmers and consumers can add crop data.",
+        "You are not allowed to add crop data.",
         [{ text: t.common.ok || "OK" }]
       );
       return;
