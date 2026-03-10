@@ -371,6 +371,14 @@ useEffect(() => {
           facing="back"
           ratio="16:9"
         />
+        <TouchableOpacity
+          style={styles.cameraBackButton}
+          onPress={() => setIsCameraOpen(false)}
+          accessible={true}
+          accessibilityLabel="Back"
+        >
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
         <View style={styles.cameraControls}>
           <TouchableOpacity
             style={styles.captureButton}

@@ -617,6 +617,15 @@ export const createCropsStyles = createOrientationStyles(
       borderRadius: 20,
       padding: 8,
     },
+    cameraBackButton: {
+      position: "absolute",
+      top: 40,
+      left: 20,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      borderRadius: 20,
+      padding: 8,
+      zIndex: 2,
+    },
     cameraTitle: {
       color: "#fff",
       fontSize: 16,
