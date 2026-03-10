@@ -19,8 +19,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { loginStyles as styles } from "@/components/auth/LoginStyle";
 import { useGlobal } from "@/context/global-provider";
 import { useTranslation } from "@/hooks/useTranslation";
-import { authService } from "@/services";
-import { APIError } from "@/services/api";
+import { authService, APIError } from "@/services";
 import { FormInput } from "@/components/auth/FormComponents";
 import GlobalLoader from "@/components/Loader";
 import illustration from "@/assets/images/workers-farm-activity-illustration 2.png";
@@ -44,6 +43,7 @@ const LoginScreen = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState<boolean>(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   // --- Handlers ---
 
@@ -55,10 +55,12 @@ const LoginScreen = () => {
     const { username, password } = form;
 
     if (!username.trim() || !password.trim()) {
+      setLoginError(t.auth.enterUsernamePassword);
       Alert.alert(t.auth.validationError, t.auth.enterUsernamePassword);
       return;
     }
 
+    setLoginError(null);
     setIsLoggingIn(true);
     setIsLoading(true);
 
@@ -73,7 +75,6 @@ const LoginScreen = () => {
       // No need to manually navigate here
 
     } catch (error: unknown) {
-      // Handle errors gracefully.
       let errorMessage = "An unexpected error occurred. Please try again.";
 
       if (error instanceof APIError) {
@@ -84,6 +85,7 @@ const LoginScreen = () => {
         if (__DEV__) console.error("Login Generic Error:", error);
       }
 
+      setLoginError(errorMessage);
       Alert.alert(t.auth.loginFailed, errorMessage);
     } finally {
       setIsLoggingIn(false);
@@ -178,6 +180,15 @@ const LoginScreen = () => {
                 <Text style={styles.checkboxLabel}>{t.auth.disclaimerAccept}</Text>
               </TouchableOpacity>
             </View>
+
+            {loginError ? (
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorBannerText}>{loginError}</Text>
+                <TouchableOpacity onPress={() => setLoginError(null)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                  <Ionicons name="close-circle" size={22} color="#b71c1c" />
+                </TouchableOpacity>
+              </View>
+            ) : null}
 
             <TouchableOpacity
               style={[

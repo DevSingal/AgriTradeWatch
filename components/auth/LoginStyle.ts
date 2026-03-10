@@ -25,4 +25,23 @@ export const loginStyles = StyleSheet.create({
   checkbox: { width: 24, height: 24, borderWidth: 2, borderColor: "#2E7D32", borderRadius: 4, alignItems: "center", justifyContent: "center", marginRight: 10 },
   checkboxChecked: { backgroundColor: "#2E7D32", borderColor: "#2E7D32" },
   checkboxLabel: { flex: 1, fontSize: 14, color: "#333" },
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#ffebee",
+    borderWidth: 1,
+    borderColor: "#ef5350",
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginTop: 16,
+    gap: 10,
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: 14,
+    color: "#b71c1c",
+    fontWeight: "500",
+  },
 });
