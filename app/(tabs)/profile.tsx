@@ -34,7 +34,12 @@ import { useTranslation } from "@/hooks/useTranslation";
 type ProfileData = EnhancedProfileData;
 
 // Props for memoized components
-interface ProfileHeaderProps { user: ProfileData; styles: any; }
+interface ProfileHeaderProps {
+  user: ProfileData;
+  styles: any;
+  /** Role to show (e.g. from auth); overrides user.role so retailer is correct when API returns consumer */
+  displayRole?: string;
+}
 interface ProfileFieldProps { field: { label: string; value: string | null; icon: string }; styles: any; }
 interface PreferenceFieldProps { field: { label: string; value: string; icon: string; onPress: () => void; editable: boolean }; styles: any; }
 
@@ -48,7 +53,7 @@ interface SelectionModalProps {
   styles: any;
 }
 
-type UserPreference = 'Farmer' | 'Consumer';
+type UserPreference = 'Farmer' | 'Consumer' | 'Retailer';
 type LocationPreference = 'Auto-detect Current' | 'Enter Manually';
 
 // ========================================================================
@@ -84,7 +89,10 @@ const useUserPreferences = (user: ProfileData | null) => {
 
   useEffect(() => {
     if (user?.job) {
-      setSelectedUserType(user.job.toLowerCase() === 'farmer' ? 'Farmer' : 'Consumer');
+      const j = user.job.toLowerCase();
+      setSelectedUserType(
+        j === 'farmer' ? 'Farmer' : j === 'retailer' ? 'Retailer' : 'Consumer'
+      );
     }
   }, [user]);
 
@@ -100,7 +108,7 @@ const useUserPreferences = (user: ProfileData | null) => {
 // Memoized UI Components (Restored)
 // ========================================================================
 
-const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ user, styles }) => (
+const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ user, styles, displayRole }) => (
   <View style={styles.headerSection}>
     <View style={styles.avatarContainer}>
       <LinearGradient colors={["#49A760", "#3d8b4f"]} style={styles.avatarGradient}>
@@ -110,7 +118,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ user, styles }
       </LinearGradient>
     </View>
     <Text style={styles.userName}>{user.displayName || user.username}</Text>
-    <Text style={styles.userRole}>{user.role || "User"}</Text>
+    <Text style={styles.userRole}>{displayRole ?? user.role ?? "User"}</Text>
   </View>
 ));
 
@@ -200,10 +208,15 @@ const SelectionModal: React.FC<SelectionModalProps> = React.memo(({
 
 const Profile = () => {
   const navigation = useNavigation();
-  const { setIsLoading } = useGlobal();
+  const { setIsLoading, mainUser } = useGlobal();
   const { t, language, setLanguage } = useTranslation();
   const { user, refetch } = useUserData();
   const { selectedUserType, selectedLocation } = useUserPreferences(user);
+
+  // Prefer auth job for role label so "Retailer" shows correctly (API may return consumer for retailer)
+  const displayRole = mainUser?.job
+    ? mainUser.job.charAt(0).toUpperCase() + mainUser.job.slice(1)
+    : undefined;
 
   const [modal, setModal] = useState<'userType' | 'location' | 'language' | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -241,7 +254,7 @@ const Profile = () => {
   }, [setIsLoading, t, navigation]);
 
   const handleUserTypeChange = useCallback(async (userType: string) => {
-    const jobValue = userType.toLowerCase() as 'farmer' | 'consumer';
+    const jobValue = userType.toLowerCase() as 'farmer' | 'consumer' | 'retailer';
     setIsLoading(true);
     try {
       await profileService.updateProfile({ job: jobValue });
@@ -341,7 +354,7 @@ const Profile = () => {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#49A760']} />}
           contentContainerStyle={{ paddingBottom: 100 }}
         >
-          <ProfileHeader user={user} styles={styles} />
+          <ProfileHeader user={user} styles={styles} displayRole={displayRole} />
 
           <View style={styles.profileCard}>
             <View style={styles.cardHeader}>

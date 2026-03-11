@@ -114,6 +114,8 @@ export const mr: TranslationKeys = {
 
   // Home Screen
   home: {
+    welcome: "स्वागत, {{username}}",
+    welcomeGuest: "स्वागत",
     welcomeBack: "परत स्वागत आहे, {{username}}!",
     checkingAuth: "प्रमाणीकरण तपासत आहे...",
     chooseLanguage: "भाषा निवडा",

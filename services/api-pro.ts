@@ -162,8 +162,13 @@ const errorInterceptor = (error: APIErrorObject): never => {
 
   if (response) {
     const { status, data } = response;
+    // Support Django-style (detail) and generic (message, error) error fields
     const errorMessage =
-      data?.message || data?.error || getDefaultErrorMessage(status);
+      (typeof data?.detail === "string" ? data.detail : null) ||
+      data?.message ||
+      data?.error ||
+      (Array.isArray(data?.non_field_errors) ? data.non_field_errors[0] : null) ||
+      getDefaultErrorMessage(status);
 
     if (status === HTTP_STATUS.UNAUTHORIZED) {
       clearAuthToken().catch(console.error);

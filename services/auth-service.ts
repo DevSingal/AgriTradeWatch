@@ -23,7 +23,7 @@ import { decode } from "base-64";
 export interface User {
   id: string; // Changed from number to string
   username: string;
-  job: "consumer" | "farmer";
+  job: "consumer" | "farmer" | "retailer";
 }
 
 // The shape of the JWT payload after decoding.
@@ -39,7 +39,7 @@ interface JWTPayload {
 export interface RegistrationData {
   username: string;
   password: string;
-  job: "consumer" | "farmer";
+  job: "consumer" | "farmer" | "retailer";
   email?: string | undefined;
   mobile?: string | undefined;
   latitude?: number | undefined;
@@ -194,41 +194,58 @@ class AuthService {
         );
       }
 
-      // Use the correct '/login/' endpoint and expect the ApiLoginResponse shape
+      // Use the correct '/login/' endpoint. Accept both custom format (status, username)
+      // and standard JWT format (access + refresh only).
       const response = await apiWithRetry.post<ApiLoginResponse>("/login/", {
         username,
         password,
       });
 
-      const {
-        access,
-        refresh,
-        username: apiUsername,
-        status,
-        message,
-      } = response.data;
+      const data = response.data as unknown as Record<string, unknown>;
+      const access = data.access as string | undefined;
+      const refresh = data.refresh as string | undefined;
+      const apiUsername = data.username as string | undefined;
+      const status = data.status as string | undefined;
+      const message = data.message as string | undefined;
 
-      if (status !== "success" || !access) {
+      // Accept if we have an access token (many backends return only access/refresh, no "status")
+      if (!access) {
         throw new APIError(
-          message || "Login failed",
+          message || (data.detail as string) || "Login failed",
+          HTTP_STATUS.UNAUTHORIZED,
+          response.data
+        );
+      }
+      if (status === "error") {
+        throw new APIError(
+          message || (data.detail as string) || "Login failed",
           HTTP_STATUS.UNAUTHORIZED,
           response.data
         );
       }
 
       await setAuthToken(access);
-      if (refresh) await AsyncStorage.setItem("refresh_token", refresh);
+      if (refresh) await AsyncStorage.setItem("refresh_token", refresh as string);
 
       const payload: JWTPayload = JSON.parse(decode(access.split(".")[1]!));
       const storedJob = await AsyncStorage.getItem("user_job");
+      // Username from API, JWT payload, or form input (backends often omit username in response)
+      const usernameToStore =
+        apiUsername || (payload as any).username || payload.user_id || username || "User";
+      await AsyncStorage.setItem("username", usernameToStore);
 
-      // Store username for later use during auto-login
-      await AsyncStorage.setItem("username", apiUsername);
+      // Preserve retailer; backend may only have consumer/farmer, so use stored job from signup
+      const job =
+        storedJob === "consumer" || storedJob === "retailer"
+          ? storedJob
+          : storedJob === "farmer"
+            ? "farmer"
+            : "consumer";
 
       const user: User = {
-        id: payload.user_id, // Use the ID from the token payload for consistency
-        username: apiUsername, // Use the username from the API response
-        job: storedJob === "consumer" ? "consumer" : "farmer",
+        id: payload.user_id,
+        username: usernameToStore,
+        job: job as User["job"],
       };
 
       notifyAuthStateChange(user);
@@ -238,15 +255,19 @@ class AuthService {
       return {
         user,
         token: access,
-        refreshToken: refresh,
+        refreshToken: refresh ?? "",
         message: "Login successful",
       };
     } catch (error: any) {
       console.error("Login error:", error);
       if (error instanceof APIError) {
         if (error.status === HTTP_STATUS.UNAUTHORIZED) {
+          const backendMsg =
+            (error.data as any)?.detail ||
+            (error.data as any)?.message ||
+            (error.data as any)?.error;
           throw new APIError(
-            "Invalid username or password",
+            typeof backendMsg === "string" ? backendMsg : "Invalid username or password",
             HTTP_STATUS.UNAUTHORIZED,
             error.data
           );
@@ -278,11 +299,17 @@ class AuthService {
 
       const storedJob = await AsyncStorage.getItem("user_job");
       const storedUsername = await AsyncStorage.getItem("username");
+      const job =
+        storedJob === "consumer" || storedJob === "retailer"
+          ? storedJob
+          : storedJob === "farmer"
+            ? "farmer"
+            : "consumer";
 
       const user: User = {
         id: payload.user_id,
-        username: storedUsername || "User", // Use stored username or fallback to "User"
-        job: storedJob === "consumer" ? "consumer" : "farmer",
+        username: storedUsername || "User",
+        job: job as User["job"],
       };
 
       notifyAuthStateChange(user);

@@ -111,6 +111,8 @@ export const en = {
 
   // Home Screen
   home: {
+    welcome: "Welcome, {{username}}",
+    welcomeGuest: "Welcome",
     welcomeBack: "Welcome back, {{username}}!",
     checkingAuth: "Checking authentication...",
     chooseLanguage: "Choose Language",

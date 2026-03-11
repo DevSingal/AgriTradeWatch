@@ -113,6 +113,8 @@ export const hi: TranslationKeys = {
 
   // Home Screen
   home: {
+    welcome: "स्वागत है, {{username}}",
+    welcomeGuest: "स्वागत है",
     welcomeBack: "वापसी पर स्वागत है, {{username}}!",
     checkingAuth: "प्रमाणीकरण जांचा जा रहा है...",
     chooseLanguage: "भाषा चुनें",

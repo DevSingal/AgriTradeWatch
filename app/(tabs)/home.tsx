@@ -324,6 +324,15 @@ const Home: React.FC = React.memo(() => {
           {/* Offline Indicator */}
           <OfflineIndicator />
 
+          {/* Welcome, username */}
+          <View style={styles.welcomeHeader}>
+            <Text style={styles.welcomeHeaderText}>
+              {mainUser?.username
+                ? (t.home.welcome?.replace("{{username}}", mainUser.username) ?? `Welcome, ${mainUser.username}`)
+                : (t.home.welcomeGuest ?? "Welcome")}
+            </Text>
+          </View>
+
           {/* Features */}
           <View style={styles.featuresSection}>
             <Text style={styles.sectionTitleMain} testID="features-title">

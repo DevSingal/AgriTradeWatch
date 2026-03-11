@@ -86,6 +86,16 @@ export const createHomeStyles = createOrientationStyles(
       paddingHorizontal: 20,
       paddingTop: 20,
     },
+    welcomeHeader: {
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: 4,
+    },
+    welcomeHeaderText: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: "#2E7D32",
+    },
     welcomeCard: {
       borderRadius: 24,
       overflow: "hidden",
