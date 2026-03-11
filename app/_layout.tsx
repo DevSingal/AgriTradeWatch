@@ -1,14 +1,38 @@
-import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { useEffect, useRef } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import 'react-native-reanimated';
-import { GlobalProvider } from '@/context/global-provider';
+import { GlobalProvider, useGlobal } from '@/context/global-provider';
 import { LanguageProvider, useLanguage } from '@/context/language-provider';
 import Loader from '@/components/Loader';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+/**
+ * When the app is reopened from background (e.g. after user closed it from Digital Thela or Add Produce),
+ * navigate back to the home tab so the user sees the homepage again.
+ */
+function ResetToHomeOnReopen() {
+  const router = useRouter();
+  const { isLogged } = useGlobal();
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      const wasInBackground = appStateRef.current === 'background' || appStateRef.current === 'inactive';
+      if (wasInBackground && nextState === 'active' && isLogged) {
+        router.replace('/(tabs)/home');
+      }
+      appStateRef.current = nextState;
+    });
+    return () => subscription.remove();
+  }, [isLogged, router]);
+
+  return null;
+}
 
 function RootStack() {
   const { t } = useLanguage();
@@ -82,6 +106,7 @@ export default function RootLayout() {
   return (
     <LanguageProvider>
       <GlobalProvider>
+        <ResetToHomeOnReopen />
         <Loader />
         <RootStack />
       </GlobalProvider>

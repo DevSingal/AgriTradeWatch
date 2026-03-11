@@ -41,7 +41,7 @@ interface GlobalContextType {
     currentLocation: Location | null;
 
     // Derived State (Strictly typed, no 'guest')
-    userRole: 'consumer' | 'farmer' | null;
+    userRole: 'consumer' | 'farmer' | 'retailer' | null;
 
     // Actions / Methods
     logout: () => Promise<void>;
@@ -129,7 +129,17 @@ export const GlobalProvider = ({ children }: GlobalProviderProps): JSX.Element =
                     const { default: profileService } = await import('@/services/profile-service');
                     const freshProfile = await profileService.getProfile();
                     console.log('✅ Fresh profile fetched:', freshProfile);
-                    setMainUser(freshProfile);
+                    // Preserve retailer role from auth; API may return consumer for retailer accounts
+                    const preservedJob =
+                        mainUser.job === 'retailer'
+                            ? 'retailer'
+                            : (freshProfile.job ?? mainUser.job);
+                    setMainUser({
+                        ...freshProfile,
+                        id: mainUser.id,
+                        username: freshProfile.username ?? mainUser.username,
+                        job: preservedJob as User['job'],
+                    });
                 } catch (error) {
                     console.error('⚠️ Failed to fetch fresh profile:', error);
                     // Keep using the cached user data if profile fetch fails
@@ -189,10 +199,10 @@ export const GlobalProvider = ({ children }: GlobalProviderProps): JSX.Element =
 
                 if (location && location.coords) {
                     // Convert to the format expected by global context
-                    const contextLocation = {
+                    const contextLocation: Location = {
                         latitude: location.coords.latitude,
                         longitude: location.coords.longitude,
-                        accuracy: location.coords.accuracy,
+                        ...(location.coords.accuracy != null && { accuracy: location.coords.accuracy }),
                         timestamp: location.timestamp || Date.now()
                     };
                     console.log('GlobalProvider: Setting location in context:', contextLocation);
